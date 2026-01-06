@@ -10,8 +10,10 @@ An AI-powered network intrusion detection system built with **Next.js 16**, **Po
 
 | Component | Technology |
 |-----------|------------|
-| Framework | Next.js 16 |
-| Language | TypeScript |
+| Frontend Framework | Next.js 16 |
+| Frontend Language | TypeScript |
+| **ML Backend** | **Python 3.11 + FastAPI** |
+| **ML Libraries** | **scikit-learn, TensorFlow/Keras, NumPy** |
 | Database | PostgreSQL + Prisma ORM + Neon Serverless |
 | AI Integration | Google Gemini API |
 | ML Algorithms | Isolation Forest, Autoencoder, K-Means, KNN |
@@ -95,6 +97,45 @@ Major-Project/
 ├── prisma/
 │   └── schema.prisma             # Database schema
 │
+├── python-ml/                    # 🐍 PYTHON ML BACKEND (NEW)
+│   ├── app/
+│   │   ├── main.py               # FastAPI application
+│   │   ├── config.py             # Configuration settings
+│   │   │
+│   │   ├── ml/                   # ML algorithms (scikit-learn/TensorFlow)
+│   │   │   ├── isolation_forest.py   # sklearn IsolationForest
+│   │   │   ├── autoencoder.py        # TensorFlow/Keras autoencoder
+│   │   │   ├── kmeans.py             # sklearn KMeans
+│   │   │   ├── knn.py                # sklearn KNN
+│   │   │   ├── ensemble.py           # Ensemble detector
+│   │   │   ├── features.py           # Feature extraction
+│   │   │   ├── training_data.py      # Training data generation
+│   │   │   └── metrics.py            # Model metrics
+│   │   │
+│   │   ├── services/             # Business logic
+│   │   │   ├── detection.py
+│   │   │   ├── rlhf.py
+│   │   │   ├── auto_response.py
+│   │   │   └── auto_training.py
+│   │   │
+│   │   ├── api/                  # API endpoints
+│   │   │   ├── detect.py
+│   │   │   ├── rlhf.py
+│   │   │   ├── auto_response.py
+│   │   │   ├── training.py
+│   │   │   └── metrics.py
+│   │   │
+│   │   └── models/               # Pydantic models
+│   │       ├── packet.py
+│   │       ├── detection.py
+│   │       └── responses.py
+│   │
+│   ├── data/                     # Stored JSON data
+│   ├── saved_models/             # Saved ML models (.joblib, .keras)
+│   ├── requirements.txt          # Python dependencies
+│   ├── Dockerfile                # Docker configuration
+│   └── README.md
+│
 └── data/                         # Stored data (JSON files)
 ```
 
@@ -134,53 +175,126 @@ The system uses an **ensemble approach** combining four ML algorithms for robust
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Algorithm Details
+### Algorithm Details (Python Backend)
 
-#### 1. Isolation Forest (`lib/ml/isolation-forest.ts`)
+> **Note**: The ML algorithms are now implemented in Python using production-ready libraries.
+
+#### 1. Isolation Forest (`python-ml/app/ml/isolation_forest.py`)
+- **Library**: scikit-learn `IsolationForest`
 - **Purpose**: Unsupervised anomaly detection
-- **Method**: Isolates anomalies by random partitioning
-- **Config**: 50 trees, 128 sample size
+- **Config**: 100 estimators, 10% contamination
 - **Output**: Anomaly score (0-1)
 
-#### 2. Autoencoder (`lib/ml/autoencoder.ts`)
+#### 2. Autoencoder (`python-ml/app/ml/autoencoder.py`)
+- **Library**: TensorFlow/Keras
 - **Purpose**: Neural network-based anomaly detection
-- **Method**: Reconstruction error analysis
-- **Architecture**: 7 → 3 → 7 (encoder-decoder)
+- **Architecture**: 7 → 5 → 3 (latent) → 5 → 7
 - **Output**: Reconstruction error as anomaly score
 
-#### 3. K-Means Clustering (`lib/ml/kmeans.ts`)
+#### 3. K-Means Clustering (`python-ml/app/ml/kmeans.py`)
+- **Library**: scikit-learn `KMeans`
 - **Purpose**: Cluster-based anomaly detection
-- **Method**: Distance from nearest cluster centroid
-- **Config**: 5 clusters, 50 iterations
+- **Config**: 5 clusters, 300 max iterations
 - **Output**: Normalized distance score
 
-#### 4. KNN Classifier (`lib/ml/knn.ts`)
+#### 4. KNN Classifier (`python-ml/app/ml/knn.py`)
+- **Library**: scikit-learn `KNeighborsClassifier`
 - **Purpose**: Supervised classification with attack type prediction
-- **Method**: Neighbor-based weighted voting
-- **Config**: k=5 neighbors
+- **Config**: k=5 neighbors, distance-weighted
 - **Features**:
   - Attack type classification
   - Online learning support
-  - Distance-weighted voting
+  - Probability-based confidence
 
-### Feature Extraction
+### Feature Extraction (Python)
 
-Network packets are transformed into 7-dimensional feature vectors:
-
-```typescript
-// lib/ml/features.ts
-export function extractFeatures(packet: NetworkPacket): number[] {
-  return [
-    normalizedPort(packet.sourcePort),
-    normalizedPort(packet.destPort),
-    normalizedProtocol(packet.protocol),
-    normalizedPacketSize(packet.packetSize),
-    ipEntropy(packet.sourceIP),
-    ipEntropy(packet.destIP),
-    flagScore(packet.flags)
-  ];
-}
+```python
+# python-ml/app/ml/features.py
+def extract_features(packet: Dict) -> List[float]:
+    return [
+        normalize_port(packet['sourcePort']),
+        normalize_port(packet['destPort']),
+        normalize_protocol(packet['protocol']),
+        normalize_packet_size(packet['packetSize']),
+        ip_entropy(packet['sourceIP']),
+        ip_entropy(packet['destIP']),
+        flag_score(packet.get('flags', ''))
+    ]
 ```
+
+---
+
+## 🐍 Python ML Backend
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    SYSTEM ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────┐      ┌─────────────┐      ┌─────────────────────┐ │
+│  │   Next.js   │      │   Next.js   │      │   Python Backend    │ │
+│  │  Frontend   │ ───► │ API Routes  │ ───► │     (FastAPI)       │ │
+│  │  (React)    │      │  (Proxy)    │      │     Port 8000       │ │
+│  └─────────────┘      └─────────────┘      │                     │ │
+│                                            │  ┌───────────────┐  │ │
+│                                            │  │  ML Algorithms │  │ │
+│                                            │  │  - sklearn     │  │ │
+│                                            │  │  - tensorflow  │  │ │
+│                                            │  │  - numpy       │  │ │
+│                                            │  └───────────────┘  │ │
+│                                            │                     │ │
+│                                            │  ┌───────────────┐  │ │
+│                                            │  │   Services    │  │ │
+│                                            │  │  - Detection  │  │ │
+│                                            │  │  - RLHF       │  │ │
+│                                            │  │  - AutoResp   │  │ │
+│                                            │  │  - Training   │  │ │
+│                                            │  └───────────────┘  │ │
+│                                            └─────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Python API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/detect` | POST | Run detection on packets |
+| `/detect/single` | POST | Detect single packet |
+| `/detect/status` | GET | Detector status |
+| `/rlhf/feedback` | POST | Submit feedback |
+| `/rlhf/weights` | GET | Get current weights |
+| `/rlhf/adjust` | POST | Force weight adjustment |
+| `/auto-response` | GET | Get config and stats |
+| `/auto-response/block` | POST | Block IP |
+| `/auto-response/unblock` | POST | Unblock IP |
+| `/training/data` | GET | Get training data |
+| `/training/retrain` | POST | Trigger retraining |
+| `/training/export` | GET | Export as JSON |
+| `/metrics` | GET | All model metrics |
+
+### Running the Python Backend
+
+```bash
+# Navigate to python-ml directory
+cd python-ml
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --reload --port 8000
+```
+
+### API Documentation
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ---
 
