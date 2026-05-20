@@ -65,7 +65,7 @@ Respond with JSON only:
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -99,7 +99,7 @@ Protocol: ${detection.packet.protocol}
 Explain (1) what was detected and why, (2) potential impact if real, (3) immediate recommended actions.`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (err) {
@@ -135,7 +135,7 @@ export async function getSecurityAdvice(query: string): Promise<string> {
 Question: ${query}`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (err) {
